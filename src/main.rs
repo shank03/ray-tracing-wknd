@@ -21,18 +21,14 @@ fn main() {
         std::io::stdout().flush().unwrap();
 
         for i in 0..image_width {
-            let r = i as f32 / (image_width - 1) as f32;
-            let g = j as f32 / (image_height - 1) as f32;
-            let b: f32 = 0.0;
-
-            let ir = (255.999 * r) as i32;
-            let ig = (255.999 * g) as i32;
-            let ib = (255.999 * b) as i32;
+            let pixel_color = [
+                i as f64 / (image_width - 1) as f64,
+                j as f64 / (image_height - 1) as f64,
+                0.0,
+            ];
 
             // write pixel to image file
-            ppm_file
-                .write_fmt(format_args!("{ir} {ig} {ib}\n"))
-                .expect("Failed to write pixel");
+            color::write_color(&mut ppm_file, pixel_color);
         }
     }
     println!("\rDone                  ");
