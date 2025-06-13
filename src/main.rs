@@ -6,7 +6,21 @@ mod color;
 mod ray;
 mod vec3;
 
+fn hit_sphere(center: vec3::Point3, radius: f64, r: &ray::Ray) -> bool {
+    let oc = center.sub(*r.origin());
+    let a = r.direction().dot(*r.direction());
+    let b = -2.0 * r.direction().dot(oc);
+    let c = oc.dot(oc) - radius * radius;
+
+    let discriminant = b * b - 4.0 * a * c;
+    discriminant >= 0.0
+}
+
 fn ray_color(r: ray::Ray) -> color::Color {
+    if hit_sphere([0.0, 0.0, -1.0], 0.5, &r) {
+        return [1.0, 0.0, 0.0];
+    }
+
     let unit_direction = r.direction().unit_vec();
     let a = 0.5 * (unit_direction.y() + 1.0);
     [1.0, 1.0, 1.0].mul_f(1.0 - a).add([0.5, 0.7, 1.0].mul_f(a))
