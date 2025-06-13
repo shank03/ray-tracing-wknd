@@ -1,4 +1,4 @@
-use std::{fs, io::Write};
+use std::{f64::INFINITY, fs, io::Write};
 
 use vec3::{SliceOp, SliceStruct};
 
@@ -9,25 +9,10 @@ mod sphere;
 mod util;
 mod vec3;
 
-fn hit_sphere(center: vec3::Point3, radius: f64, r: &ray::Ray) -> f64 {
-    let oc = center.sub(*r.origin());
-    let a = r.direction().len_squared();
-    let h = r.direction().dot(oc);
-    let c = oc.len_squared() - radius * radius;
-
-    let discriminant = h * h - a * c;
-    if discriminant < 0.0 {
-        -1.0
-    } else {
-        (h - discriminant.sqrt()) / a
-    }
-}
-
-fn ray_color(r: ray::Ray) -> color::Color {
-    let t = hit_sphere([0.0, 0.0, -1.0], 0.5, &r);
-    if t > 0.0 {
-        let normal = r.at(t).sub([0.0, 0.0, -1.0]).unit_vec();
-        return [normal.x() + 1.0, normal.y() + 1.0, normal.z() + 1.0].mul_f(0.5);
+fn ray_color(r: ray::Ray, world: &dyn hittable::Hittable) -> color::Color {
+    let mut record = hittable::HitRecord::init();
+    if world.hit(&r, 0.0..INFINITY, &mut record) {
+        return record.normal.add([1.0, 1.0, 1.0]).mul_f(0.5);
     }
 
     let unit_direction = r.direction().unit_vec();
@@ -43,6 +28,11 @@ fn main() {
     // calculate image height, it should be at least 1
     let image_height = (image_width as f64 / aspect_ratio) as i32;
     let image_height = image_height.max(1);
+
+    // world
+    let mut world = hittable::HittableList::new();
+    world.push(sphere::Sphere::new([0.0, 0.0, -1.0], 0.5));
+    world.push(sphere::Sphere::new([0.0, -100.5, -1.0], 100.0));
 
     // camera
     let focal_length = 1.0;
@@ -85,7 +75,7 @@ fn main() {
             let ray_direction = pixel_center.sub(camera_center);
             let r = ray::Ray::new(camera_center, ray_direction);
 
-            let pixel_color = ray_color(r);
+            let pixel_color = ray_color(r, &world);
 
             // write pixel to image file
             color::write_color(&mut ppm_file, pixel_color);
