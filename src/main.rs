@@ -2,6 +2,7 @@ use std::{f64::INFINITY, fs, io::Write};
 
 use vec3::{SliceOp, SliceStruct};
 
+mod camera;
 mod color;
 mod hittable;
 mod ray;
