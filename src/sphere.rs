@@ -44,7 +44,9 @@ impl Hittable for Sphere {
 
         record.t = root;
         record.p = r.at(root);
-        record.normal = record.p.sub(self.center).div_f(self.radius);
+
+        let outward_normal = record.p.sub(self.center).div_f(self.radius);
+        record.set_face_normal(r, outward_normal);
 
         true
     }
