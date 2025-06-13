@@ -1,12 +1,44 @@
 use std::{fs, io::Write};
 
+use vec3::SliceOp;
+
 mod color;
 mod ray;
 mod vec3;
 
+fn ray_color(r: ray::Ray) -> color::Color {
+    vec3::init()
+}
+
 fn main() {
-    let image_width = 256;
-    let image_height = 256;
+    // image
+    let aspect_ratio = 16.0 / 9.0;
+    let image_width = 400;
+
+    // calculate image height, it should be at least 1
+    let image_height = (image_width as f64 / aspect_ratio) as i32;
+    let image_height = image_height.max(1);
+
+    // camera
+    let focal_length = 1.0;
+    let viewport_height = 2.0;
+    let viewport_width = viewport_height * (image_width as f64 / image_height as f64);
+    let camera_center = vec3::init();
+
+    // calculate the vectors across the horizontal and down the vertical viewport edges
+    let viewport_u = [viewport_width, 0.0, 0.0];
+    let viewport_v = [0.0, -viewport_height, 0.0];
+
+    // calculate the horizontal and vertical delta vectors from pixel to pixel
+    let pixel_delta_u = viewport_u.div_f(image_width as f64);
+    let pixel_delta_v = viewport_v.div_f(image_height as f64);
+
+    // calculate the location of the upper left pixel
+    let viewport_upper_left = camera_center
+        .sub([0.0, 0.0, focal_length])
+        .sub(viewport_u.div_f(2.0))
+        .sub(viewport_v.div_f(2.0));
+    let pixel00_loc = viewport_upper_left.add(pixel_delta_u.add(pixel_delta_v).mul_f(0.5));
 
     // image file
     let mut ppm_file =
@@ -22,11 +54,13 @@ fn main() {
         std::io::stdout().flush().unwrap();
 
         for i in 0..image_width {
-            let pixel_color = [
-                i as f64 / (image_width - 1) as f64,
-                j as f64 / (image_height - 1) as f64,
-                0.0,
-            ];
+            let pixel_center = pixel00_loc
+                .add(pixel_delta_u.mul_f(i as f64))
+                .add(pixel_delta_v.mul_f(j as f64));
+            let ray_direction = pixel_center.sub(camera_center);
+            let r = ray::Ray::new(camera_center, ray_direction);
+
+            let pixel_color = ray_color(r);
 
             // write pixel to image file
             color::write_color(&mut ppm_file, pixel_color);
