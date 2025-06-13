@@ -5,6 +5,7 @@ use vec3::{SliceOp, SliceStruct};
 mod color;
 mod hittable;
 mod ray;
+mod sphere;
 mod vec3;
 
 fn hit_sphere(center: vec3::Point3, radius: f64, r: &ray::Ray) -> f64 {
