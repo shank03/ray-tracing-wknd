@@ -6,6 +6,7 @@ mod color;
 mod hittable;
 mod ray;
 mod sphere;
+mod util;
 mod vec3;
 
 fn hit_sphere(center: vec3::Point3, radius: f64, r: &ray::Ray) -> f64 {
