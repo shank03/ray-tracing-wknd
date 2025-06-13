@@ -1,13 +1,15 @@
 use std::{fs, io::Write};
 
-use vec3::SliceOp;
+use vec3::{SliceOp, SliceStruct};
 
 mod color;
 mod ray;
 mod vec3;
 
 fn ray_color(r: ray::Ray) -> color::Color {
-    vec3::init()
+    let unit_direction = r.direction().unit_vec();
+    let a = 0.5 * (unit_direction.y() + 1.0);
+    [1.0, 1.0, 1.0].mul_f(1.0 - a).add([0.5, 0.7, 1.0].mul_f(a))
 }
 
 fn main() {
