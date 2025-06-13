@@ -3,6 +3,7 @@ use std::{fs, io::Write};
 use vec3::{SliceOp, SliceStruct};
 
 mod color;
+mod hittable;
 mod ray;
 mod vec3;
 
