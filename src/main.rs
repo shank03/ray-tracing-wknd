@@ -1,6 +1,7 @@
 use std::{fs, io::Write};
 
 mod color;
+mod ray;
 mod vec3;
 
 fn main() {
