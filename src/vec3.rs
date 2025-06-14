@@ -1,8 +1,26 @@
+use crate::util;
+
 pub type Vec3 = [f64; 3];
 pub type Point3 = Vec3;
 
 pub fn init() -> Vec3 {
     [0.0, 0.0, 0.0]
+}
+
+pub fn random() -> Vec3 {
+    [
+        util::random_float(),
+        util::random_float(),
+        util::random_float(),
+    ]
+}
+
+pub fn random_min_max(min: f64, max: f64) -> Vec3 {
+    [
+        util::random_min_max(min, max),
+        util::random_min_max(min, max),
+        util::random_min_max(min, max),
+    ]
 }
 
 pub trait SliceStruct {
