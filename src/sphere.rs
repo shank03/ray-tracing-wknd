@@ -1,26 +1,32 @@
 use crate::{
     hittable::Hittable,
+    material::Material,
     vec3::{Point3, SliceOp},
 };
 
-pub struct Sphere {
+pub struct Sphere<'m> {
     center: Point3,
     radius: f64,
+    material: &'m dyn Material,
 }
 
-impl Sphere {
-    pub fn new(center: Point3, radius: f64) -> Self {
-        Self { center, radius }
+impl<'m> Sphere<'m> {
+    pub fn new(center: Point3, radius: f64, material: &'m dyn Material) -> Self {
+        Self {
+            center,
+            radius,
+            material,
+        }
     }
 }
 
-impl Hittable for Sphere {
+impl<'m> Hittable<'m> for Sphere<'m> {
     fn hit(
         &self,
         r: &crate::ray::Ray,
         ray_t: std::ops::Range<f64>,
         record: &mut crate::hittable::HitRecord,
-    ) -> bool {
+    ) -> Option<&'m dyn Material> {
         let oc = self.center.sub(*r.origin());
         let a = r.direction().len_squared();
         let h = r.direction().dot(oc);
@@ -28,7 +34,7 @@ impl Hittable for Sphere {
 
         let discriminant = h * h - a * c;
         if discriminant < 0.0 {
-            return false;
+            return None;
         }
 
         let sqrtd = discriminant.sqrt();
@@ -38,7 +44,7 @@ impl Hittable for Sphere {
         if root <= ray_t.start || ray_t.end <= root {
             root = (h + sqrtd) / a;
             if root <= ray_t.start || ray_t.end <= root {
-                return false;
+                return None;
             }
         }
 
@@ -48,6 +54,6 @@ impl Hittable for Sphere {
         let outward_normal = record.p.sub(self.center).div_f(self.radius);
         record.set_face_normal(r, outward_normal);
 
-        true
+        Some(self.material)
     }
 }
