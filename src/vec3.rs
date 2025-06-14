@@ -75,6 +75,7 @@ pub trait SliceOp {
     fn dot(self, rhs: Vec3) -> f64;
     fn cross(self, rhs: Vec3) -> Vec3;
     fn unit_vec(self) -> Vec3;
+    fn near_zero(&self) -> bool;
 
     fn neg(&self) -> Vec3;
     fn add(self, rhs: Vec3) -> Vec3;
@@ -109,6 +110,11 @@ impl SliceOp for Vec3 {
     fn unit_vec(self) -> Vec3 {
         let len = self.length();
         self.div_f(len)
+    }
+
+    fn near_zero(&self) -> bool {
+        let s = 1e-8;
+        self[0].abs() < s && self[1].abs() < s && self[2].abs() < s
     }
 
     fn neg(&self) -> Vec3 {
