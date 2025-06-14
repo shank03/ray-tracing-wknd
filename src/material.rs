@@ -105,9 +105,17 @@ impl Material for Dielectric {
         };
 
         let unit_direction = r_in.direction().unit_vec();
-        let refracted = unit_direction.refract(record.normal, ri);
+        let cos_theta = unit_direction.neg().dot(record.normal).min(1.0);
+        let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 
-        *scattered = Ray::new(record.p, refracted);
+        let cannot_refract = ri * sin_theta > 1.0;
+        let direction = if cannot_refract {
+            unit_direction.reflect(record.normal)
+        } else {
+            unit_direction.refract(record.normal, ri)
+        };
+
+        *scattered = Ray::new(record.p, direction);
         true
     }
 }
