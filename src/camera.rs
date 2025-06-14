@@ -4,6 +4,7 @@ use crate::{
     color::{self, Color},
     hittable::{HitRecord, Hittable},
     ray::Ray,
+    util,
     vec3::{self, Point3, SliceOp, SliceStruct, Vec3},
 };
 
@@ -14,13 +15,17 @@ pub struct Camera {
     pixel00_loc: Point3,
     pixel_delta_u: Vec3,
     pixel_delta_v: Vec3,
+    pixel_sample_scale: f64,
+    sample_per_pixel: i32,
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f64, image_width: i32) -> Self {
+    pub fn new(aspect_ratio: f64, image_width: i32, sample_per_pixel: i32) -> Self {
         // calculate image height, it should be at least 1
         let image_height = (image_width as f64 / aspect_ratio) as i32;
         let image_height = image_height.max(1);
+
+        let pixel_sample_scale = 1.0 / sample_per_pixel as f64;
 
         // camera
         let focal_length = 1.0;
@@ -50,6 +55,8 @@ impl Camera {
             pixel00_loc,
             pixel_delta_u,
             pixel_delta_v,
+            pixel_sample_scale,
+            sample_per_pixel,
         }
     }
 
@@ -71,20 +78,28 @@ impl Camera {
             std::io::stdout().flush().unwrap();
 
             for i in 0..self.image_width {
-                let pixel_center = self
-                    .pixel00_loc
-                    .add(self.pixel_delta_u.mul_f(i as f64))
-                    .add(self.pixel_delta_v.mul_f(j as f64));
-                let ray_direction = pixel_center.sub(self.center);
-                let r = Ray::new(self.center, ray_direction);
-
-                let pixel_color = Self::ray_color(r, world);
+                let mut pixel_color = vec3::init();
+                for _sample in 0..self.sample_per_pixel {
+                    let r = self.get_ray(i, j);
+                    pixel_color.add_assign(Self::ray_color(r, world));
+                }
 
                 // write pixel to image file
-                color::write_color(&mut ppm_file, pixel_color);
+                color::write_color(&mut ppm_file, pixel_color.mul_f(self.pixel_sample_scale));
             }
         }
         println!("\rDone                  ");
+    }
+
+    fn get_ray(&self, i: i32, j: i32) -> Ray {
+        let offset = [util::random_float() - 0.5, util::random_float() - 0.5, 0.0];
+        let pixel_sample = self
+            .pixel00_loc
+            .add(self.pixel_delta_u.mul_f(i as f64 + offset.x()))
+            .add(self.pixel_delta_v.mul_f(j as f64 + offset.y()));
+
+        let ray_direction = pixel_sample.sub(self.center);
+        Ray::new(self.center, ray_direction)
     }
 
     fn ray_color(r: Ray, world: &dyn Hittable) -> Color {
