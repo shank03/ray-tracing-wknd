@@ -77,6 +77,7 @@ pub trait SliceOp {
     fn unit_vec(self) -> Vec3;
     fn near_zero(&self) -> bool;
     fn reflect(self, n: Vec3) -> Vec3;
+    fn refract(self, n: Vec3, etai_over_etat: f64) -> Vec3;
 
     fn neg(&self) -> Vec3;
     fn add(self, rhs: Vec3) -> Vec3;
@@ -120,6 +121,13 @@ impl SliceOp for Vec3 {
 
     fn reflect(self, n: Vec3) -> Vec3 {
         self.sub(n.mul_f(2.0 * self.dot(n)))
+    }
+
+    fn refract(self, n: Vec3, etai_over_etat: f64) -> Vec3 {
+        let cos_theta = self.neg().dot(n).min(1.0);
+        let r_out_perp = self.add(n.mul_f(cos_theta)).mul_f(etai_over_etat);
+        let r_out_parallel = n.mul_f(-(1.0 - r_out_perp.len_squared()).abs().sqrt());
+        r_out_perp.add(r_out_parallel)
     }
 
     fn neg(&self) -> Vec3 {
