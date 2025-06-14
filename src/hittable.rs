@@ -1,6 +1,7 @@
 use std::ops::Range;
 
 use crate::{
+    material::Material,
     ray::Ray,
     vec3::{self, Point3, SliceOp, Vec3},
 };
@@ -35,14 +36,14 @@ impl HitRecord {
     }
 }
 
-pub trait Hittable {
-    fn hit(&self, r: &Ray, ray_t: Range<f64>, record: &mut HitRecord) -> bool;
+pub trait Hittable<'m> {
+    fn hit(&self, r: &Ray, ray_t: Range<f64>, record: &mut HitRecord) -> Option<&'m dyn Material>;
 }
 
 #[repr(transparent)]
 pub struct HittableList<H>(Vec<H>);
 
-impl<H: Hittable> HittableList<H> {
+impl<'m, H: Hittable<'m>> HittableList<H> {
     pub fn new() -> Self {
         Self(Vec::new())
     }
@@ -52,7 +53,7 @@ impl<H: Hittable> HittableList<H> {
     }
 }
 
-impl<H: Hittable> IntoIterator for HittableList<H> {
+impl<'m, H: Hittable<'m>> IntoIterator for HittableList<H> {
     type Item = H;
 
     type IntoIter = std::vec::IntoIter<H>;
@@ -62,20 +63,20 @@ impl<H: Hittable> IntoIterator for HittableList<H> {
     }
 }
 
-impl<H: Hittable> Hittable for HittableList<H> {
-    fn hit(&self, r: &Ray, ray_t: Range<f64>, record: &mut HitRecord) -> bool {
+impl<'m, H: Hittable<'m>> Hittable<'m> for HittableList<H> {
+    fn hit(&self, r: &Ray, ray_t: Range<f64>, record: &mut HitRecord) -> Option<&'m dyn Material> {
         let mut temp_rec = HitRecord::init();
-        let mut hit_anything = false;
         let mut closest_so_far = ray_t.end;
+        let mut material_hit = None;
 
         for obj in self.0.iter() {
-            if obj.hit(r, ray_t.start..closest_so_far, &mut temp_rec) {
-                hit_anything = true;
+            if let Some(m) = obj.hit(r, ray_t.start..closest_so_far, &mut temp_rec) {
+                material_hit = Some(m);
                 closest_so_far = temp_rec.t;
                 *record = temp_rec.clone();
             }
         }
 
-        hit_anything
+        material_hit
     }
 }
