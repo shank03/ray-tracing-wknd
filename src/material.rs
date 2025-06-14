@@ -2,6 +2,7 @@ use crate::{
     color::Color,
     hittable::HitRecord,
     ray::Ray,
+    util,
     vec3::{self, SliceOp},
 };
 
@@ -13,6 +14,12 @@ pub trait Material {
         attenuation: &mut Color,
         scattered: &mut Ray,
     ) -> bool;
+}
+
+fn reflectance(cosine: f64, ri: f64) -> f64 {
+    let r0 = (1.0 - ri) / (1.0 + ri);
+    let r0 = r0 * r0;
+    r0 + (1.0 - r0) * (1.0 - cosine).powf(5.0)
 }
 
 pub struct Lambertian {
@@ -109,7 +116,7 @@ impl Material for Dielectric {
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 
         let cannot_refract = ri * sin_theta > 1.0;
-        let direction = if cannot_refract {
+        let direction = if cannot_refract || reflectance(cos_theta, ri) > util::random_float() {
             unit_direction.reflect(record.normal)
         } else {
             unit_direction.refract(record.normal, ri)
