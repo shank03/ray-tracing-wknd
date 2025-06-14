@@ -1,4 +1,9 @@
-use crate::{color::Color, hittable::HitRecord, ray::Ray};
+use crate::{
+    color::Color,
+    hittable::HitRecord,
+    ray::Ray,
+    vec3::{self, SliceOp},
+};
 
 pub trait Material {
     fn scatter(
@@ -8,4 +13,29 @@ pub trait Material {
         attenuation: &mut Color,
         scattered: &mut Ray,
     ) -> bool;
+}
+
+pub struct Lambertian {
+    albedo: Color,
+}
+
+impl Lambertian {
+    pub fn new(albedo: Color) -> Self {
+        Self { albedo }
+    }
+}
+
+impl Material for Lambertian {
+    fn scatter(
+        &self,
+        _r_in: &Ray,
+        record: &HitRecord,
+        attenuation: &mut Color,
+        scattered: &mut Ray,
+    ) -> bool {
+        let scatter_direction = record.normal.add(vec3::random_unit_vector());
+        *scattered = Ray::new(record.p, scatter_direction);
+        *attenuation = self.albedo;
+        true
+    }
 }
