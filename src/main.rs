@@ -1,6 +1,7 @@
 mod camera;
 mod color;
 mod hittable;
+mod material;
 mod ray;
 mod sphere;
 mod util;
