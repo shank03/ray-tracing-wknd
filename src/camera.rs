@@ -111,9 +111,13 @@ impl Camera {
         }
 
         let mut record = HitRecord::init();
-        if world.hit(&r, 0.001..INFINITY, &mut record) {
-            let direction = record.normal.add(vec3::random_unit_vector());
-            return Self::ray_color(Ray::new(record.p, direction), depth - 1, world).mul_f(0.5);
+        if let Some(mat) = world.hit(&r, 0.001..INFINITY, &mut record) {
+            let mut scattered = Ray::init();
+            let mut attenuation = vec3::init();
+            if mat.scatter(&r, &record, &mut attenuation, &mut scattered) {
+                return attenuation.mul(Self::ray_color(scattered, depth - 1, world));
+            }
+            return vec3::init();
         }
 
         let unit_direction = r.direction().unit_vec();
