@@ -14,7 +14,8 @@ fn main() {
 
     let material_ground = material::Lambertian::new([0.8, 0.8, 0.0]);
     let material_center = material::Lambertian::new([0.1, 0.2, 0.5]);
-    let material_left = material::Dielectric::new(1.00 / 1.33);
+    let material_left = material::Dielectric::new(1.5);
+    let material_bubble = material::Dielectric::new(1.00 / 1.50);
     let material_right = material::Metal::new([0.8, 0.6, 0.2]);
 
     // world
@@ -26,6 +27,11 @@ fn main() {
     ));
     world.push(sphere::Sphere::new([0.0, 0.0, -1.2], 0.5, &material_center));
     world.push(sphere::Sphere::new([-1.0, 0.0, -1.0], 0.5, &material_left));
+    world.push(sphere::Sphere::new(
+        [-1.0, 0.0, -1.0],
+        0.4,
+        &material_bubble,
+    ));
     world.push(sphere::Sphere::new([1.0, 0.0, -1.0], 0.5, &material_right));
 
     let cam = camera::Camera::new(aspect_ratio, image_width, 100, 50);
