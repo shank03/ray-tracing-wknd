@@ -16,6 +16,6 @@ fn main() {
     world.push(sphere::Sphere::new([0.0, 0.0, -1.0], 0.5));
     world.push(sphere::Sphere::new([0.0, -100.5, -1.0], 100.0));
 
-    let cam = camera::Camera::new(aspect_ratio, image_width, 100);
+    let cam = camera::Camera::new(aspect_ratio, image_width, 100, 50);
     cam.render(&world);
 }
