@@ -39,6 +39,7 @@ pub trait SliceOp {
 
     fn neg(&self) -> Vec3;
     fn add(self, rhs: Vec3) -> Vec3;
+    fn add_assign(&mut self, rhs: Vec3);
     fn sub(self, rhs: Vec3) -> Vec3;
     fn mul(self, rhs: Vec3) -> Vec3;
     fn mul_f(self, rhs: f64) -> Vec3;
@@ -77,6 +78,12 @@ impl SliceOp for Vec3 {
 
     fn add(self, rhs: Vec3) -> Vec3 {
         [self[0] + rhs[0], self[1] + rhs[1], self[2] + rhs[2]]
+    }
+
+    fn add_assign(&mut self, rhs: Vec3) {
+        self[0] += rhs[0];
+        self[1] += rhs[1];
+        self[2] += rhs[2];
     }
 
     fn sub(self, rhs: Vec3) -> Vec3 {
