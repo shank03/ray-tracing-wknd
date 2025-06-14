@@ -23,6 +23,18 @@ pub fn random_min_max(min: f64, max: f64) -> Vec3 {
     ]
 }
 
+pub fn random_unit_vector() -> Vec3 {
+    loop {
+        let p = random_min_max(-1.0, 1.0);
+        let len_sq = p.len_squared();
+        // prevent fp leak; very small value can underflow to zero
+        // use 1^-160 as min bound
+        if 1e-160 < len_sq && len_sq <= 1.0 {
+            return p.div_f(len_sq.sqrt());
+        }
+    }
+}
+
 pub trait SliceStruct {
     fn x(&self) -> &f64;
     fn y(&self) -> &f64;
