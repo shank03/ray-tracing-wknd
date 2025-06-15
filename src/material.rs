@@ -16,6 +16,12 @@ pub trait Material {
     ) -> bool;
 }
 
+pub enum MatType {
+    Lambertian(Lambertian),
+    Metal(Metal),
+    Dielectric(Dielectric),
+}
+
 fn reflectance(cosine: f64, ri: f64) -> f64 {
     let r0 = (1.0 - ri) / (1.0 + ri);
     let r0 = r0 * r0;
