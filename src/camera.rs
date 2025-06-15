@@ -21,7 +21,13 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f64, image_width: i32, sample_per_pixel: i32, max_depth: i32) -> Self {
+    pub fn new(
+        aspect_ratio: f64,
+        image_width: i32,
+        sample_per_pixel: i32,
+        max_depth: i32,
+        vfov: f64,
+    ) -> Self {
         // calculate image height, it should be at least 1
         let image_height = (image_width as f64 / aspect_ratio) as i32;
         let image_height = image_height.max(1);
@@ -30,7 +36,9 @@ impl Camera {
 
         // camera
         let focal_length = 1.0;
-        let viewport_height = 2.0;
+        let theta = util::degrees_to_radians(vfov);
+        let h = (theta / 2.0).tan();
+        let viewport_height = 2.0 * h * focal_length;
         let viewport_width = viewport_height * (image_width as f64 / image_height as f64);
         let center = vec3::init();
 
