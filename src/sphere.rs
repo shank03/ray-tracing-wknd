@@ -9,6 +9,8 @@ pub struct Sphere<'m> {
     radius: f64,
     material: &'m dyn Material,
 }
+unsafe impl Send for Sphere<'_> {}
+unsafe impl Sync for Sphere<'_> {}
 
 impl<'m> Sphere<'m> {
     pub fn new(center: Point3, radius: f64, material: &'m dyn Material) -> Self {

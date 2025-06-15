@@ -36,7 +36,7 @@ impl HitRecord {
     }
 }
 
-pub trait Hittable<'m> {
+pub trait Hittable<'m>: Send + Sync {
     fn hit(&self, r: &Ray, ray_t: Range<f64>, record: &mut HitRecord) -> Option<&'m dyn Material>;
 }
 
