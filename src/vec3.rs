@@ -48,31 +48,6 @@ pub fn random_in_unit_disk() -> Vec3 {
     }
 }
 
-pub trait SliceStruct {
-    fn x(&self) -> &f64;
-    fn y(&self) -> &f64;
-    fn z(&self) -> &f64;
-    fn display(&self) -> String;
-}
-
-impl SliceStruct for Vec3 {
-    fn x(&self) -> &f64 {
-        &self[0]
-    }
-
-    fn y(&self) -> &f64 {
-        &self[1]
-    }
-
-    fn z(&self) -> &f64 {
-        &self[2]
-    }
-
-    fn display(&self) -> String {
-        format!("{} {} {}", self[0], self[1], self[2])
-    }
-}
-
 pub trait SliceOp {
     fn len_squared(&self) -> f64;
     fn length(&self) -> f64;

@@ -7,7 +7,7 @@ use crate::{
     hittable::{HitRecord, Hittable},
     ray::Ray,
     util,
-    vec3::{self, Point3, SliceOp, SliceStruct, Vec3},
+    vec3::{self, Point3, SliceOp, Vec3},
 };
 
 pub struct Camera {
@@ -142,11 +142,11 @@ impl Camera {
     }
 
     fn get_ray(&self, i: f64, j: f64) -> Ray {
-        let offset = [util::random_float() - 0.5, util::random_float() - 0.5, 0.0];
+        let (x, y) = (util::random_float() - 0.5, util::random_float() - 0.5);
         let pixel_sample = self
             .pixel00_loc
-            .add(self.pixel_delta_u.mul_f(i + offset.x()))
-            .add(self.pixel_delta_v.mul_f(j + offset.y()));
+            .add(self.pixel_delta_u.mul_f(i + x))
+            .add(self.pixel_delta_v.mul_f(j + y));
 
         let ray_origin = if self.defocus_angle <= 0.0 {
             self.center
@@ -175,8 +175,8 @@ impl Camera {
             return vec3::init();
         }
 
-        let unit_direction = r.direction().unit_vec();
-        let a = 0.5 * (unit_direction.y() + 1.0);
+        let [_, y, _] = r.direction().unit_vec();
+        let a = 0.5 * (y + 1.0);
         [1.0, 1.0, 1.0].mul_f(1.0 - a).add([0.5, 0.7, 1.0].mul_f(a))
     }
 }
