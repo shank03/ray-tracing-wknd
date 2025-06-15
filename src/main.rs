@@ -34,6 +34,15 @@ fn main() {
     ));
     world.push(sphere::Sphere::new([1.0, 0.0, -1.0], 0.5, &material_right));
 
-    let cam = camera::Camera::new(aspect_ratio, image_width, 100, 50, 90.0);
+    let cam = camera::Camera::new(
+        aspect_ratio,
+        image_width,
+        100,
+        50,
+        90.0,
+        [-2.0, 2.0, 1.0],
+        [0.0, 0.0, -1.0],
+        [0.0, 1.0, 0.0],
+    );
     cam.render(&world);
 }

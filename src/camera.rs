@@ -27,6 +27,9 @@ impl Camera {
         sample_per_pixel: i32,
         max_depth: i32,
         vfov: f64,
+        look_from: Vec3,
+        look_at: Vec3,
+        vup: Vec3,
     ) -> Self {
         // calculate image height, it should be at least 1
         let image_height = (image_width as f64 / aspect_ratio) as i32;
@@ -35,16 +38,21 @@ impl Camera {
         let pixel_sample_scale = 1.0 / sample_per_pixel as f64;
 
         // camera
-        let focal_length = 1.0;
+        let center = look_from;
+        let focal_length = look_from.sub(look_at).length();
         let theta = util::degrees_to_radians(vfov);
         let h = (theta / 2.0).tan();
         let viewport_height = 2.0 * h * focal_length;
         let viewport_width = viewport_height * (image_width as f64 / image_height as f64);
-        let center = vec3::init();
+
+        // calculate the u,v,w unit basic vectors for the camera coordinate frame.
+        let w = look_from.sub(look_at).unit_vec();
+        let u = vup.cross(w).unit_vec();
+        let v = w.cross(u);
 
         // calculate the vectors across the horizontal and down the vertical viewport edges
-        let viewport_u = [viewport_width, 0.0, 0.0];
-        let viewport_v = [0.0, -viewport_height, 0.0];
+        let viewport_u = u.mul_f(viewport_width);
+        let viewport_v = v.neg().mul_f(viewport_height);
 
         // calculate the horizontal and vertical delta vectors from pixel to pixel
         let pixel_delta_u = viewport_u.div_f(image_width as f64);
@@ -52,7 +60,7 @@ impl Camera {
 
         // calculate the location of the upper left pixel
         let viewport_upper_left = center
-            .sub([0.0, 0.0, focal_length])
+            .sub(w.mul_f(focal_length))
             .sub(viewport_u.div_f(2.0))
             .sub(viewport_v.div_f(2.0));
         let pixel00_loc = viewport_upper_left.add(pixel_delta_u.add(pixel_delta_v).mul_f(0.5));
