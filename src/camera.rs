@@ -1,6 +1,6 @@
 use std::{f64::INFINITY, fs, io::Write};
 
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::iter::ParallelIterator;
 
 use crate::{
     color::{self, Color},
@@ -114,53 +114,31 @@ impl Camera {
             self.image_width, self.image_height, pixel_count
         );
 
-        let mut pixel_buffer = Vec::<[u8; 3]>::new();
-        pixel_buffer.resize(pixel_count, [0, 0, 0]);
-
-        let mut pixel_coordinates = Vec::<[f64; 2]>::new();
-        pixel_coordinates.reserve(pixel_count);
-        for j in 0..self.image_height {
-            for i in 0..self.image_width {
-                pixel_coordinates.push([i as f64, j as f64]);
-            }
-        }
-
-        let buffer_ptr = MutPtr(pixel_buffer.as_mut_ptr());
-        let coordinates_ptr = Ptr(pixel_coordinates.as_mut_ptr());
-
         println!("Rendering ...");
         let start_time = std::time::Instant::now();
 
+        let mut img_buf =
+            image::ImageBuffer::new(self.image_width as u32, self.image_height as u32);
+
         // SAFETY: Since, each pixel is computed independently,
         // it is safe to access individual pixel in parallel
-        (0..pixel_count).into_par_iter().for_each(|index| {
-            let [i, j] = unsafe { *{ coordinates_ptr }.0.add(index) };
+        img_buf
+            .par_enumerate_pixels_mut()
+            .for_each(|(i, j, pixel)| {
+                let mut pixel_color = vec3::init();
+                for _sample in 0..self.sample_per_pixel {
+                    let r = self.get_ray(i as f64, j as f64);
+                    let color = Self::ray_color(r, self.max_depth, world);
+                    pixel_color.add_assign(color);
+                }
 
-            let mut pixel_color = vec3::init();
-            for _sample in 0..self.sample_per_pixel {
-                let r = self.get_ray(i, j);
-                let color = Self::ray_color(r, self.max_depth, world);
-                pixel_color.add_assign(color);
-            }
-
-            unsafe {
-                *{ buffer_ptr }.0.add(index) =
-                    color::get_pixel(pixel_color.mul_f(self.pixel_sample_scale));
-            };
-        });
+                *pixel = image::Rgb(color::get_pixel(pixel_color.mul_f(self.pixel_sample_scale)));
+            });
         println!("elapsed: {:?}", start_time.elapsed());
 
         println!("Writing pixels to file");
-        for (i, [r, g, b]) in pixel_buffer.into_iter().enumerate() {
-            print!("\rpixel: {i} ");
-            std::io::stdout().flush().unwrap();
-
-            ppm_file
-                .write_fmt(format_args!("{r} {g} {b}\n"))
-                .expect("Failed to write pixel");
-        }
-
-        println!("\rDone                  ");
+        img_buf.save("image.png").unwrap();
+        println!("Done");
     }
 
     fn get_ray(&self, i: f64, j: f64) -> Ray {
@@ -202,13 +180,3 @@ impl Camera {
         [1.0, 1.0, 1.0].mul_f(1.0 - a).add([0.5, 0.7, 1.0].mul_f(a))
     }
 }
-
-#[derive(Clone, Copy)]
-struct MutPtr<T>(*mut T);
-unsafe impl<T> Send for MutPtr<T> {}
-unsafe impl<T> Sync for MutPtr<T> {}
-
-#[derive(Clone, Copy)]
-struct Ptr<T>(*mut T);
-unsafe impl<T> Send for Ptr<T> {}
-unsafe impl<T> Sync for Ptr<T> {}
