@@ -7,13 +7,13 @@ use crate::{
 pub struct Sphere<'m> {
     center: Point3,
     radius: f64,
-    material: &'m dyn Material,
+    material: &'m Material,
 }
 unsafe impl Send for Sphere<'_> {}
 unsafe impl Sync for Sphere<'_> {}
 
 impl<'m> Sphere<'m> {
-    pub fn new(center: Point3, radius: f64, material: &'m dyn Material) -> Self {
+    pub fn new(center: Point3, radius: f64, material: &'m Material) -> Self {
         Self {
             center,
             radius,
@@ -28,7 +28,7 @@ impl<'m> Hittable<'m> for Sphere<'m> {
         r: &crate::ray::Ray,
         ray_t: std::ops::Range<f64>,
         record: &mut crate::hittable::HitRecord,
-    ) -> Option<&'m dyn Material> {
+    ) -> Option<&'m Material> {
         let oc = self.center.sub(*r.origin());
         let a = r.direction().len_squared();
         let h = r.direction().dot(oc);

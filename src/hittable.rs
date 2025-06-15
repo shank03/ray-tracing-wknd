@@ -37,7 +37,7 @@ impl HitRecord {
 }
 
 pub trait Hittable<'m>: Send + Sync {
-    fn hit(&self, r: &Ray, ray_t: Range<f64>, record: &mut HitRecord) -> Option<&'m dyn Material>;
+    fn hit(&self, r: &Ray, ray_t: Range<f64>, record: &mut HitRecord) -> Option<&'m Material>;
 }
 
 #[repr(transparent)]
@@ -64,7 +64,7 @@ impl<'m, H: Hittable<'m>> IntoIterator for HittableList<H> {
 }
 
 impl<'m, H: Hittable<'m>> Hittable<'m> for HittableList<H> {
-    fn hit(&self, r: &Ray, ray_t: Range<f64>, record: &mut HitRecord) -> Option<&'m dyn Material> {
+    fn hit(&self, r: &Ray, ray_t: Range<f64>, record: &mut HitRecord) -> Option<&'m Material> {
         let mut temp_rec = HitRecord::init();
         let mut closest_so_far = ray_t.end;
         let mut material_hit = None;

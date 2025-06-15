@@ -26,14 +26,14 @@ fn main() {
                 let material = match random_mat {
                     x if x < 0.8 => {
                         let albedo = vec3::random().mul(vec3::random());
-                        material::MatType::Lambertian(material::Lambertian::new(albedo))
+                        material::Material::Lambertian(albedo)
                     }
                     x if x < 0.95 => {
                         let albedo = vec3::random_min_max(0.5, 1.0);
                         let fuzz = util::random_min_max(0.0, 0.5);
-                        material::MatType::Metal(material::Metal::new(albedo, fuzz))
+                        material::Material::Metal(albedo, fuzz)
                     }
-                    _ => material::MatType::Dielectric(material::Dielectric::new(1.5)),
+                    _ => material::Material::Dielectric(1.5),
                 };
 
                 materials.push((center, material));
@@ -44,7 +44,7 @@ fn main() {
     // world
     let mut world = hittable::HittableList::new();
 
-    let material_ground = material::Lambertian::new([0.5, 0.5, 0.5]);
+    let material_ground = material::Material::Lambertian([0.5, 0.5, 0.5]);
     world.push(sphere::Sphere::new(
         [0.0, -1000.0, 0.0],
         1000.0,
@@ -52,20 +52,12 @@ fn main() {
     ));
 
     materials.iter().for_each(|(center, mat)| {
-        world.push(sphere::Sphere::new(
-            *center,
-            0.2,
-            match mat {
-                material::MatType::Lambertian(lambertian) => lambertian,
-                material::MatType::Metal(metal) => metal,
-                material::MatType::Dielectric(dielectric) => dielectric,
-            },
-        ));
+        world.push(sphere::Sphere::new(*center, 0.2, mat));
     });
 
-    let mat_dielectric = material::Dielectric::new(1.5);
-    let mat_lambertian = material::Lambertian::new([0.4, 0.2, 0.1]);
-    let mat_metal = material::Metal::new([0.7, 0.6, 0.5], 0.0);
+    let mat_dielectric = material::Material::Dielectric(1.5);
+    let mat_lambertian = material::Material::Lambertian([0.4, 0.2, 0.1]);
+    let mat_metal = material::Material::Metal([0.7, 0.6, 0.5], 0.0);
 
     world.push(sphere::Sphere::new([0.0, 1.0, 0.0], 1.0, &mat_dielectric));
     world.push(sphere::Sphere::new([-4.0, 1.0, 0.0], 1.0, &mat_lambertian));

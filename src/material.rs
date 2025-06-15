@@ -6,20 +6,10 @@ use crate::{
     vec3::{self, SliceOp},
 };
 
-pub trait Material {
-    fn scatter(
-        &self,
-        r_in: &Ray,
-        record: &HitRecord,
-        attenuation: &mut Color,
-        scattered: &mut Ray,
-    ) -> bool;
-}
-
-pub enum MatType {
-    Lambertian(Lambertian),
-    Metal(Metal),
-    Dielectric(Dielectric),
+pub enum Material {
+    Lambertian(Color),
+    Metal(Color, f64),
+    Dielectric(f64),
 }
 
 fn reflectance(cosine: f64, ri: f64) -> f64 {
@@ -28,107 +18,60 @@ fn reflectance(cosine: f64, ri: f64) -> f64 {
     r0 + (1.0 - r0) * (1.0 - cosine).powf(5.0)
 }
 
-pub struct Lambertian {
-    albedo: Color,
-}
-
-impl Lambertian {
-    pub fn new(albedo: Color) -> Self {
-        Self { albedo }
-    }
-}
-
-impl Material for Lambertian {
-    fn scatter(
-        &self,
-        _r_in: &Ray,
-        record: &HitRecord,
-        attenuation: &mut Color,
-        scattered: &mut Ray,
-    ) -> bool {
-        let mut scatter_direction = record.normal.add(vec3::random_unit_vector());
-        // catch degenerate scatter direction
-        if scatter_direction.near_zero() {
-            scatter_direction = record.normal;
-        }
-
-        *scattered = Ray::new(record.p, scatter_direction);
-        *attenuation = self.albedo;
-        true
-    }
-}
-
-pub struct Metal {
-    albedo: Color,
-    fuzz: f64,
-}
-
-impl Metal {
-    pub fn new(albedo: Color, fuzz: f64) -> Self {
-        Self {
-            albedo,
-            fuzz: fuzz.min(1.0),
-        }
-    }
-}
-
-impl Material for Metal {
-    fn scatter(
+impl Material {
+    pub fn scatter(
         &self,
         r_in: &Ray,
         record: &HitRecord,
         attenuation: &mut Color,
         scattered: &mut Ray,
     ) -> bool {
-        let reflected = r_in.direction().reflect(record.normal);
-        let reflected = reflected
-            .unit_vec()
-            .add(vec3::random_unit_vector().mul_f(self.fuzz));
+        match self {
+            Material::Lambertian(albedo) => {
+                let mut scatter_direction = record.normal.add(vec3::random_unit_vector());
+                // catch degenerate scatter direction
+                if scatter_direction.near_zero() {
+                    scatter_direction = record.normal;
+                }
 
-        *scattered = Ray::new(record.p, reflected);
-        *attenuation = self.albedo;
+                *scattered = Ray::new(record.p, scatter_direction);
+                *attenuation = *albedo;
+                true
+            }
+            Material::Metal(albedo, fuzz) => {
+                let reflected = r_in.direction().reflect(record.normal);
+                let reflected = reflected
+                    .unit_vec()
+                    .add(vec3::random_unit_vector().mul_f(*fuzz));
 
-        scattered.direction().dot(record.normal) > 0.0
-    }
-}
+                *scattered = Ray::new(record.p, reflected);
+                *attenuation = *albedo;
 
-pub struct Dielectric {
-    refraction_index: f64,
-}
+                scattered.direction().dot(record.normal) > 0.0
+            }
+            Material::Dielectric(refraction_index) => {
+                *attenuation = [1.0, 1.0, 1.0];
+                let ri = if record.front_face {
+                    1.0 / *refraction_index
+                } else {
+                    *refraction_index
+                };
 
-impl Dielectric {
-    pub fn new(refraction_index: f64) -> Self {
-        Self { refraction_index }
-    }
-}
+                let unit_direction = r_in.direction().unit_vec();
+                let cos_theta = unit_direction.neg().dot(record.normal).min(1.0);
+                let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 
-impl Material for Dielectric {
-    fn scatter(
-        &self,
-        r_in: &Ray,
-        record: &HitRecord,
-        attenuation: &mut Color,
-        scattered: &mut Ray,
-    ) -> bool {
-        *attenuation = [1.0, 1.0, 1.0];
-        let ri = if record.front_face {
-            1.0 / self.refraction_index
-        } else {
-            self.refraction_index
-        };
+                let cannot_refract = ri * sin_theta > 1.0;
+                let direction =
+                    if cannot_refract || reflectance(cos_theta, ri) > util::random_float() {
+                        unit_direction.reflect(record.normal)
+                    } else {
+                        unit_direction.refract(record.normal, ri)
+                    };
 
-        let unit_direction = r_in.direction().unit_vec();
-        let cos_theta = unit_direction.neg().dot(record.normal).min(1.0);
-        let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
-
-        let cannot_refract = ri * sin_theta > 1.0;
-        let direction = if cannot_refract || reflectance(cos_theta, ri) > util::random_float() {
-            unit_direction.reflect(record.normal)
-        } else {
-            unit_direction.refract(record.normal, ri)
-        };
-
-        *scattered = Ray::new(record.p, direction);
-        true
+                *scattered = Ray::new(record.p, direction);
+                true
+            }
+        }
     }
 }
