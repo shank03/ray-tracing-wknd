@@ -18,6 +18,9 @@ pub struct Camera {
     pixel_sample_scale: f64,
     sample_per_pixel: i32,
     max_depth: i32,
+    defocus_angle: f64,
+    defocus_disk_u: Vec3,
+    defocus_disk_v: Vec3,
 }
 
 impl Camera {
@@ -30,6 +33,8 @@ impl Camera {
         look_from: Vec3,
         look_at: Vec3,
         vup: Vec3,
+        defocus_angle: f64,
+        focus_dist: f64,
     ) -> Self {
         // calculate image height, it should be at least 1
         let image_height = (image_width as f64 / aspect_ratio) as i32;
@@ -39,10 +44,9 @@ impl Camera {
 
         // camera
         let center = look_from;
-        let focal_length = look_from.sub(look_at).length();
         let theta = util::degrees_to_radians(vfov);
         let h = (theta / 2.0).tan();
-        let viewport_height = 2.0 * h * focal_length;
+        let viewport_height = 2.0 * h * focus_dist;
         let viewport_width = viewport_height * (image_width as f64 / image_height as f64);
 
         // calculate the u,v,w unit basic vectors for the camera coordinate frame.
@@ -60,10 +64,15 @@ impl Camera {
 
         // calculate the location of the upper left pixel
         let viewport_upper_left = center
-            .sub(w.mul_f(focal_length))
+            .sub(w.mul_f(focus_dist))
             .sub(viewport_u.div_f(2.0))
             .sub(viewport_v.div_f(2.0));
         let pixel00_loc = viewport_upper_left.add(pixel_delta_u.add(pixel_delta_v).mul_f(0.5));
+
+        // calculate the camera defocus disk basis vectors
+        let defocus_radis = focus_dist * util::degrees_to_radians(defocus_angle / 2.0).tan();
+        let defocus_disk_u = u.mul_f(defocus_radis);
+        let defocus_disk_v = v.mul_f(defocus_radis);
 
         Self {
             image_width,
@@ -75,6 +84,9 @@ impl Camera {
             pixel_sample_scale,
             sample_per_pixel,
             max_depth,
+            defocus_angle,
+            defocus_disk_u,
+            defocus_disk_v,
         }
     }
 
@@ -117,8 +129,16 @@ impl Camera {
             .add(self.pixel_delta_u.mul_f(i as f64 + offset.x()))
             .add(self.pixel_delta_v.mul_f(j as f64 + offset.y()));
 
-        let ray_direction = pixel_sample.sub(self.center);
-        Ray::new(self.center, ray_direction)
+        let ray_origin = if self.defocus_angle <= 0.0 {
+            self.center
+        } else {
+            let [x, y, _] = vec3::random_in_unit_disk();
+            self.center
+                .add(self.defocus_disk_u.mul_f(x))
+                .add(self.defocus_disk_v.mul_f(y))
+        };
+        let ray_direction = pixel_sample.sub(ray_origin);
+        Ray::new(ray_origin, ray_direction)
     }
 
     fn ray_color(r: Ray, depth: i32, world: &dyn Hittable) -> Color {
